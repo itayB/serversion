@@ -1,0 +1,16 @@
+# Byte-compiled
+__pycache__/
+.vscode
+
+# Environments
+venv/
+
+# IDEs
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Unit test / coverage reports
+coverage.xml
