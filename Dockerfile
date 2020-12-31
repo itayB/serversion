@@ -1,6 +1,5 @@
 FROM python:3-slim
-ADD ./serversion /serversion
 ADD ./requirements.txt /requirements.txt
 RUN pip install -r requirements.txt
-
+ADD ./serversion /serversion
 CMD ["python", "-m", "serversion"]

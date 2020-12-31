@@ -1,5 +1,9 @@
+from typing import Dict
 from aiohttp import web, ClientSession
 from aiohttp.abc import Request
+import base64
+import gzip
+import json
 import ssl
 
 
@@ -57,6 +61,15 @@ class VersionsView(web.View):
             namespaces.add(name)
         return namespaces
 
+    def _get_pod_name(self, pod_info):
+        pod_name = None
+        generate_name = pod_info.get("metadata", {}).get("generateName")
+        if generate_name is not None:
+            pod_name = "-".join(generate_name.split("-")[:-2])
+        else:
+            pod_name = pod_info.get("metadata", {}).get("name")
+        return pod_name
+
     def _get_versioned_images(self, pod_info):
         versioned_images = {}
         spec = pod_info.get("spec", {})
@@ -65,31 +78,61 @@ class VersionsView(web.View):
             name = container.get("name")
             image = container.get("image")
             versioned_images[name] = image
-        return versioned_images
+        return {
+            "containers": versioned_images,
+        }
+
+    async def get_helm_data(self, client):
+        helm_data = dict()
+        response = await client.get(f"{APISERVER}/api/v1/secrets",
+                                    headers=self.headers,
+                                    ssl=self.sslcontext)
+        secrets_info = await response.json()
+        items = secrets_info.get("items", [])
+        for item in items:
+            if item.get("type") == "helm.sh/release.v1":
+                release: str = item.get("data", {}).get("release", "")
+                compressed_data: bytes = base64.b64decode(base64.b64decode(release))
+                uncompressed: str = gzip.decompress(compressed_data).decode()
+                chart_data: Dict = json.loads(uncompressed)
+                metadata: Dict = chart_data.get("chart", {}).get("metadata", {})
+                namespace: str = chart_data.get("namespace")
+                name = metadata.get("name")
+                if helm_data.get(namespace) is None:
+                    helm_data[namespace] = dict()
+                helm_data[namespace][name] = {
+                    "version": metadata.get("version"),
+                    "appVersion": metadata.get("appVersion"),
+                }
+        return helm_data
 
     async def get(self):
         app = self.request.app
         token = self._get_token()
         # namespace = self._get_namespace()
-        headers = {
+        self.headers = {
             "Authorization": f"Bearer {token}",
         }
         #TODO: support compression
-        sslcontext = ssl.create_default_context(cafile=CACERT)
+        self.sslcontext = ssl.create_default_context(cafile=CACERT)
         cluster_versions = dict()
         async with ClientSession() as client:
             response = await client.get(f"{APISERVER}/api/v1/namespaces",   
-                                        headers=headers,
-                                        ssl=sslcontext)
+                                        headers=self.headers,
+                                        ssl=self.sslcontext)
             namespaces_info = await response.json()
             namespaces = self._get_namespaces(namespaces_info)
             versions = dict()
             #TODO: in parallel
             for namespace in namespaces:
                 response = await client.get(f"{APISERVER}/api/v1/namespaces/{namespace}/pods",   
-                                            headers=headers,
-                                            ssl=sslcontext)
+                                            headers=self.headers,
+                                            ssl=self.sslcontext)
                 pods_info = await response.json()
-                versions = list(map(lambda item: self._get_versioned_images(item), pods_info.get("items", [])))
+                versions = {self._get_pod_name(item): self._get_versioned_images(item) for item in pods_info.get("items", [])}
                 cluster_versions[namespace] = versions
+            helm = await self.get_helm_data(client)
+            for ns, charts in helm.items():
+                for chart, versions in charts.items():
+                    cluster_versions[ns][chart].update(versions)
         return web.json_response(cluster_versions)
