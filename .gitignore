@@ -13,4 +13,6 @@ venv/
 !.vscode/extensions.json
 
 # Unit test / coverage reports
+.coverage
 coverage.xml
+result.xml

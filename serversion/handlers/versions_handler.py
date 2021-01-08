@@ -8,19 +8,19 @@ import ssl
 
 
 # Point to the internal API server hostname
-APISERVER="https://kubernetes.default.svc"
+APISERVER = "https://kubernetes.default.svc"
 
 # Path to ServiceAccount token
-SERVICEACCOUNT="/var/run/secrets/kubernetes.io/serviceaccount"
+SERVICEACCOUNT = "/var/run/secrets/kubernetes.io/serviceaccount"
 
 # Path to read this Pod's namespace
-NAMESPACE=f"{SERVICEACCOUNT}/namespace"
+NAMESPACE = f"{SERVICEACCOUNT}/namespace"
 
 # Path to read the ServiceAccount bearer token
-TOKEN=f"{SERVICEACCOUNT}/token"
+TOKEN = f"{SERVICEACCOUNT}/token"
 
 # Reference the internal certificate authority (CA)
-CACERT=f"{SERVICEACCOUNT}/ca.crt"
+CACERT = f"{SERVICEACCOUNT}/ca.crt"
 
 # Explore the API with TOKEN
 # curl --cacert ${CACERT} --header "Authorization: Bearer ${TOKEN}" -X GET ${APISERVER}/api
@@ -44,7 +44,7 @@ class VersionsView(web.View):
     #     return namespace
 
     def _get_token(self):
-        token = 'missing token'
+        token = None
         try:
             with open(TOKEN, 'r') as opened_file:
                 token = opened_file.read()
@@ -107,29 +107,31 @@ class VersionsView(web.View):
         return helm_data
 
     async def get(self):
-        app = self.request.app
+        # app = self.request.app
         token = self._get_token()
         # namespace = self._get_namespace()
         self.headers = {
             "Authorization": f"Bearer {token}",
         }
-        #TODO: support compression
+        # TODO: support compression
         self.sslcontext = ssl.create_default_context(cafile=CACERT)
         cluster_versions = dict()
         async with ClientSession() as client:
-            response = await client.get(f"{APISERVER}/api/v1/namespaces",   
+            response = await client.get(f"{APISERVER}/api/v1/namespaces",
                                         headers=self.headers,
                                         ssl=self.sslcontext)
             namespaces_info = await response.json()
             namespaces = self._get_namespaces(namespaces_info)
             versions = dict()
-            #TODO: in parallel
+            # TODO: in parallel
             for namespace in namespaces:
-                response = await client.get(f"{APISERVER}/api/v1/namespaces/{namespace}/pods",   
+                response = await client.get(f"{APISERVER}/api/v1/namespaces/{namespace}/pods",
                                             headers=self.headers,
                                             ssl=self.sslcontext)
                 pods_info = await response.json()
-                versions = {self._get_pod_name(item): self._get_versioned_images(item) for item in pods_info.get("items", [])}
+                versions = {
+                    self._get_pod_name(item): self._get_versioned_images(item) for item in pods_info.get("items", [])
+                }
                 cluster_versions[namespace] = versions
             helm = await self.get_helm_data(client)
             for ns, charts in helm.items():
