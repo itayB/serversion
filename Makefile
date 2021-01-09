@@ -3,6 +3,8 @@ MODULE := serversion
 BLUE=\033[0;34m
 NC=\033[0m # No Color
 
+.PHONY: lint test type
+
 run:
 	@python -m $(MODULE)
 
@@ -16,3 +18,8 @@ lint:
 	@flake8
 	@echo "\n${BLUE}Running Bandit against source files...${NC}\n"
 	@bandit -r --ini setup.cfg
+
+type:
+	@mypy ${MODULE}
+
+all: lint type test
