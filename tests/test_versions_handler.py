@@ -12,5 +12,5 @@ class TestVersionsHandlerView(AioHTTPTestCase):
     @unittest.skip("temoprary")
     @unittest_run_loop
     async def test_health_check(self):
-        resp = await self.client.get('/api/v1/versions', data=None)
+        resp = await self.client.get("/api/v1/versions", data=None)
         assert resp.status == 200

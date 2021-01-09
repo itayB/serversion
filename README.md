@@ -3,6 +3,11 @@ build locally:
 docker build -t serversion .
 ```
 
+create namespace if not exist:
+```
+kubectl create ns my-nc
+```
+
 install with helm:
 ```
 helm install serversion -n my-nc helm/serversion
