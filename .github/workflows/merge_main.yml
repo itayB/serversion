@@ -3,6 +3,7 @@ name: Merged to main branch
 on:
   pull_request:
     types: [ closed ]
+    branches: [ main ]
 
 jobs:
   merge_to_main:
