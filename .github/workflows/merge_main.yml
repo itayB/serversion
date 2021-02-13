@@ -1,0 +1,36 @@
+name: Merged to main branch
+
+on:
+  pull_request:
+    types: [ closed ]
+
+jobs:
+  merge_to_main:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+    - run: |
+        echo "Pull request #${{ github.event.number }} merged to main branch"
+    - uses: actions/checkout@v1
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt -r requirements-dev.txt
+    - name: Run tests
+      run: |
+        make test | tee coverage.output
+    - name: Save coverage for badge
+      run: |
+        echo "COVERAGE="$(cat coverage.output | grep TOTAL | awk '{ print $6 }') >> $GITHUB_ENV
+    - name: Create coverage badge
+      uses: schneegans/dynamic-badges-action@v1.0.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: 7c7bce8167ba2aeaf2a850a00cf8de59
+        filename: serversion_coverage.json
+        label: coverage
+        message: ${{ env.COVERAGE }}
+        color: green

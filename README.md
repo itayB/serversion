@@ -1,3 +1,5 @@
+![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/itayB/7c7bce8167ba2aeaf2a850a00cf8de59/raw/serversion_coverage.json)
+
 build locally:
 ```
 docker build -t serversion .
