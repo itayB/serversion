@@ -15,12 +15,12 @@ class Webserver:
             web.view('/', HealthCheckView),
             web.view('/api/v1/versions', VersionsView),
         ])
+        app['kubernetes'] = Kubernetes()
         return app
 
     @staticmethod
     def run():
         app = Webserver.get_web_application()
-        app['kubernetes'] = Kubernetes()
         host = os.getenv("LISTENING_HOST")
         port = int(os.getenv("LISTENING_PORT", "80"))
         web.run_app(app, host=host, port=port)

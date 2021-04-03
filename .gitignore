@@ -1,6 +1,7 @@
 # Byte-compiled
 __pycache__/
 .vscode
+*.pyc
 
 # Environments
 venv/
