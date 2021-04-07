@@ -1,4 +1,5 @@
 import asyncio
+import json
 import os
 import ssl
 from mock import Mock
@@ -44,6 +45,12 @@ async def mock_get(self, url: str, headers, ssl):  # pylint: disable=unused-argu
                         },
                     }],
                 }
+            elif url.endswith("secrets"):
+                result = {
+                    "items": [{
+                        "type": "helm.sh/release.v1",
+                    }],
+                }
             else:
                 result = {}
             future.set_result(result)
@@ -78,6 +85,30 @@ async def test_get_images_with_tags(monkeypatch):
                 "containers": {
                     "container-name": "image-name",
                 },
+            },
+        },
+    }
+
+
+async def test_get_helm_data(monkeypatch):
+    kubernetes = Kubernetes()
+    monkeypatch.setattr(ClientSession, 'get', mock_get)
+    monkeypatch.setattr(json, 'loads', lambda _: {
+        "chart": {
+            "metadata": {
+                "name": "release-name",
+                "version": "1.0.0",
+                "appVersion": "2.0.0",
+            },
+        },
+        "namespace": "kube-system",
+    })
+    helm_data = await kubernetes.get_helm_data()
+    assert helm_data == {
+        "kube-system": {
+            "release-name": {
+                "appVersion": "2.0.0",
+                "version": "1.0.0",
             },
         },
     }
