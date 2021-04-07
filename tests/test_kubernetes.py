@@ -25,12 +25,28 @@ def test_set_ssl_context(monkeypatch):
     kubernetes._set_ssl_context()
 
 
-async def mock_get(self, url, headers, ssl):  # pylint: disable=unused-argument,redefined-outer-name
+async def mock_get(self, url: str, headers, ssl):  # pylint: disable=unused-argument,redefined-outer-name
     class MockJson:
         @classmethod
         def json(cls):
             future = asyncio.Future()
-            future.set_result({})
+            if url.endswith("pods"):
+                result = {
+                    "items": [{
+                        "metadata": {
+                            "generateName": "pod-name-1-1",
+                        },
+                        "spec": {
+                            "containers": [{
+                                "name": "container-name",
+                                "image": "image-name",
+                            }],
+                        },
+                    }],
+                }
+            else:
+                result = {}
+            future.set_result(result)
             return future
     return MockJson()
 
@@ -40,3 +56,28 @@ async def test_get_namespaces(monkeypatch):
     monkeypatch.setattr(ClientSession, 'get', mock_get)
     namespaces = await kubernetes.get_namespaces()
     assert namespaces == set()
+
+
+def test_set_headers():
+    kubernetes = Kubernetes()
+    kubernetes._set_headers()
+    assert kubernetes.headers == {"Authorization": "Bearer None"}
+    kubernetes.token = "test"
+    kubernetes._set_headers()
+    assert kubernetes.headers == {"Authorization": "Bearer test"}
+
+
+async def test_get_images_with_tags(monkeypatch):
+    kubernetes = Kubernetes()
+    namespaces = set(["kube-system"])
+    monkeypatch.setattr(ClientSession, 'get', mock_get)
+    images_with_tags = await kubernetes.get_images_with_tags(namespaces)
+    assert images_with_tags == {
+        "kube-system": {
+            "pod-name": {
+                "containers": {
+                    "container-name": "image-name",
+                },
+            },
+        },
+    }
