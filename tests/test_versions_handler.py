@@ -1,5 +1,5 @@
-import unittest
 import copy
+import unittest
 from aiohttp.abc import Application
 from aiohttp.test_utils import AioHTTPTestCase, unittest_run_loop
 from mock import AsyncMock

@@ -13,6 +13,8 @@ class Kubernetes:
         super().__init__()
         if api_server_url is None:
             self.api_server = "https://kubernetes.default.svc"
+        else:
+            self.api_server = api_server_url
         self.service_account_path = "/var/run/secrets/kubernetes.io/serviceaccount"
         self.headers = None
         self.token = None
