@@ -1,5 +1,7 @@
 ![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/itayB/7c7bce8167ba2aeaf2a850a00cf8de59/raw/serversion_coverage.json)
 
+Used [Decoding Helm Secrets](https://dbafromthecold.com/2020/08/10/decoding-helm-secrets/) post as part of this repository.
+
 build locally:
 ```
 docker build -t serversion .
