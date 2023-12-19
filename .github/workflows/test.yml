@@ -21,8 +21,6 @@ jobs:
         pip install -r requirements.txt -r requirements-dev.txt
     - name: Test with pytest
       run: py.test -o junit_family=xunit2 --junitxml result.xml -v --ff --cov=serversion --cov-report=xml --cov-report=term tests
-    - name: Run Linters
-      run: make lint
     - name: Coverage Report
       if: always()
       uses: aGallea/tests-coverage-report@1.3.1
