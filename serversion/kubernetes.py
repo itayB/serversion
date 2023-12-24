@@ -37,7 +37,7 @@ class Kubernetes:
         token_path = f"{self.service_account_path}/token"
         token = None
         try:
-            with open(token_path, 'r') as opened_file:
+            with open(token_path, encoding="utf-8") as opened_file:
                 token = opened_file.read()
         except FileNotFoundError:
             # TODO: switch print to logger
@@ -91,7 +91,7 @@ class Kubernetes:
         }
 
     async def get_images_with_tags(self, namespaces):
-        images_with_tags = dict()
+        images_with_tags = {}
         if self.headers is None:
             self._set_headers()
         # TODO: in parallel
@@ -109,7 +109,7 @@ class Kubernetes:
         return images_with_tags
 
     async def get_helm_data(self):
-        helm_data = dict()
+        helm_data = {}
         async with ClientSession() as session:
             response = await session.get(
                 f"{self.api_server}/api/v1/secrets",
@@ -127,7 +127,7 @@ class Kubernetes:
                     namespace: str = chart_data.get("namespace")
                     name = metadata.get("name")
                     if helm_data.get(namespace) is None:
-                        helm_data[namespace] = dict()
+                        helm_data[namespace] = {}
                     helm_data[namespace][name] = {
                         "version": metadata.get("version"),
                         "appVersion": metadata.get("appVersion"),
