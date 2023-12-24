@@ -2,7 +2,7 @@
 bandit>=1.7.0
 flake8>=3.8.4
 mypy>=0.790
-pytest>=6.2.1
+pytest>=7.4.3
 pytest-cov>=2.11.1
 pylint>=2.6.0
 pytest-aiohttp>=0.3.0
